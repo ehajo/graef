@@ -3,3 +3,5 @@
 # You can modify this file to suit your needs.
 /software/.esphome/
 /software/my_components/tm1651/__pycache__
+/reverse engineering/001-Pulsonix
+/reverse engineering/002-Reports
