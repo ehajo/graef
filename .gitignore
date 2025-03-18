@@ -1,5 +1,5 @@
 # Gitignore settings for ESPHome
 # This is an example and may include too much for your use-case.
 # You can modify this file to suit your needs.
-/.esphome/
-/my_components/tm1651/__pycache__
+/software/.esphome/
+/software/my_components/tm1651/__pycache__
