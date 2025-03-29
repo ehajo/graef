@@ -1,0 +1,44 @@
+esphome:
+  name: uart_bridge
+
+esp8266:
+  board: nodemcu
+
+# Aktiviere Logging
+logger:
+
+# Hardware UART Konfiguration
+uart:
+  - id: uart_hw
+    rx_pin: RX    # Hardware RX Pin des ESP8266
+    tx_pin: TX    # Hardware TX Pin des ESP8266
+    baud_rate: 9600  # Passe die Baudrate nach Bedarf an
+
+# Software UART Konfiguration
+  - id: uart_sw
+    rx_pin: GPIO4
+    tx_pin: GPIO5
+    baud_rate: 9600  # Muss mit der Hardware UART übereinstimmen
+
+# Hauptlogik zum Weiterleiten der Daten
+substitutions:
+  device_name: uart_bridge
+
+# Script zum Weiterleiten der Daten
+script:
+  - id: uart_forward
+    then:
+      - lambda: |-
+          if (id(uart_hw).available()) {
+            uint8_t c;
+            while (id(uart_hw).available()) {
+              id(uart_hw).read_byte(&c);
+              id(uart_sw).write_byte(c);
+            }
+          }
+
+# Führe das Script kontinuierlich aus
+interval:
+  - interval: 10ms
+    then:
+      - script.execute: uart_forward
