@@ -1,0 +1,66 @@
+esphome:
+  name: uart_bridge
+  platformio_options:
+    board: rpipicow
+
+rp2040:
+  board: pico-w
+
+# WLAN-Konfiguration für OTA
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+# Home Assistant API für Integration
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# OTA-Updates über Home Assistant
+ota:
+  password: !secret ota_password
+
+# Logging nur bei Bedarf (optional deaktivieren für Performance)
+logger:
+  level: INFO  # Reduziere auf INFO oder NONE für weniger Overhead
+
+# Hardware UART0 Konfiguration
+uart:
+  - id: uart_graef
+    rx_pin: GPIO0
+    tx_pin: GPIO1
+    baud_rate: 9600
+    rx_buffer_size: 256  # Erhöhe den Puffer für schnellere Verarbeitung
+
+# Hardware UART1 Konfiguration
+  - id: uart_tastenfeld
+    rx_pin: GPIO5
+    tx_pin: GPIO4
+    baud_rate: 9600
+    rx_buffer_size: 256
+
+# Hauptlogik zum Weiterleiten der Daten
+script:
+  - id: uart_forward_graef_to_tastenfeld
+    then:
+      - lambda: |-
+          uint8_t c;
+          while (id(uart_graef).available()) {
+            id(uart_graef).read_byte(&c);
+            id(uart_tastenfeld).write_byte(c);
+          }
+  - id: uart_forward_tastenfeld_to_graef
+    then:
+      - lambda: |-
+          uint8_t c;
+          while (id(uart_tastenfeld).available()) {
+            id(uart_tastenfeld).read_byte(&c);
+            id(uart_graef).write_byte(c);
+          }
+
+# Kontinuierliche Ausführung mit minimalem Intervall
+interval:
+  - interval: 1ms  # Reduziert auf 1 ms für schnellere Reaktion
+    then:
+      - script.execute: uart_forward_graef_to_tastenfeld
+      - script.execute: uart_forward_tastenfeld_to_graef
